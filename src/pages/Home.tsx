@@ -53,7 +53,7 @@ export default function Home() {
   function handleReset() {
     setFromText('');
     setToText('');
-    setMaxDistanceKm(30);
+    setMaxDistanceKm(10);
     setOnlyLargeTruck(false);
     setRequiredFacilities([]);
     setHasSearched(false);
