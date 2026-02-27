@@ -4,6 +4,10 @@ description: >
   Firebase へのビルド＆デプロイを一括実行します。
   本番環境へのデプロイ前に必要な検証も自動実行します。
 allowed-tools: Bash, Read
+triggers:
+  - patterns:
+      - "firebase.*(デプロイ|deploy)"
+      - "(デプロイ|deploy).*firebase"
 ---
 
 # Firebase Deploy Skill
