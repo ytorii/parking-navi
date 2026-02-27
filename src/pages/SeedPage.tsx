@@ -1,0 +1,633 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
+import { toast } from 'sonner';
+import { deleteAllParkingLots, createParkingLot } from '@/lib/parkingLots';
+import PageHeader from '@/components/PageHeader';
+import type { ParkingLotPayload } from '@/types/parkingLot';
+
+const SA_FACILITIES = {
+  shower: true,
+  toilet: true,
+  convenienceStore: true,
+  restaurant: true,
+  laundry: false,
+  vendingMachine: true,
+  wifi: true,
+  electricOutlet: false,
+  gasStation: true,
+  tirePressure: false,
+  truckWash: false,
+  sleepingArea: true,
+};
+
+const PA_FACILITIES = {
+  shower: false,
+  toilet: true,
+  convenienceStore: false,
+  restaurant: false,
+  laundry: false,
+  vendingMachine: true,
+  wifi: false,
+  electricOutlet: false,
+  gasStation: false,
+  tirePressure: false,
+  truckWash: false,
+  sleepingArea: false,
+};
+
+const MICHI_FACILITIES = {
+  shower: false,
+  toilet: true,
+  convenienceStore: true,
+  restaurant: true,
+  laundry: false,
+  vendingMachine: true,
+  wifi: false,
+  electricOutlet: false,
+  gasStation: false,
+  tirePressure: false,
+  truckWash: false,
+  sleepingArea: false,
+};
+
+const TRUCK_FACILITIES = {
+  shower: true,
+  toilet: true,
+  convenienceStore: true,
+  restaurant: true,
+  laundry: true,
+  vendingMachine: true,
+  wifi: true,
+  electricOutlet: true,
+  gasStation: true,
+  tirePressure: true,
+  truckWash: true,
+  sleepingArea: true,
+};
+
+const SEED_DATA: ParkingLotPayload[] = [
+  // ── 山陽自動車道 SA（10件）────────────────────────────────────────
+  {
+    name: '宮島SA(上り)',
+    type: 'sa',
+    region: '広島',
+    address: '広島県廿日市市上平良',
+    location: { lat: 34.376, lng: 132.321 },
+    routeInfo: { highwayName: '山陽自動車道', direction: '上り', nearestIC: '廿日市IC' },
+    capacityTotal: 150,
+    capacityLargeTruck: 45,
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...SA_FACILITIES },
+    description: 'スターバックス併設。瀬戸内の眺望が楽しめるSA。',
+    imageUrls: [],
+  },
+  {
+    name: '宮島SA(下り)',
+    type: 'sa',
+    region: '広島',
+    address: '広島県廿日市市上平良293',
+    location: { lat: 34.373, lng: 132.318 },
+    routeInfo: { highwayName: '山陽自動車道', direction: '下り', nearestIC: '廿日市IC' },
+    capacityTotal: 140,
+    capacityLargeTruck: 40,
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...SA_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '小谷SA(上り)',
+    type: 'sa',
+    region: '広島',
+    address: '広島県東広島市高屋町小谷5661',
+    location: { lat: 34.406, lng: 132.818 },
+    routeInfo: { highwayName: '山陽自動車道', direction: '上り', nearestIC: '高屋JCT' },
+    capacityTotal: 120,
+    capacityLargeTruck: 35,
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...SA_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '小谷SA(下り)',
+    type: 'sa',
+    region: '広島',
+    address: '広島県東広島市高屋町小谷',
+    location: { lat: 34.403, lng: 132.816 },
+    routeInfo: { highwayName: '山陽自動車道', direction: '下り', nearestIC: '高屋JCT' },
+    capacityTotal: 120,
+    capacityLargeTruck: 35,
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...SA_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '福山SA(上り)',
+    type: 'sa',
+    region: '広島',
+    address: '広島県福山市津之郷町津之郷',
+    location: { lat: 34.471, lng: 133.366 },
+    routeInfo: { highwayName: '山陽自動車道', direction: '上り', nearestIC: '福山東IC' },
+    capacityTotal: 200,
+    capacityLargeTruck: 60,
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...SA_FACILITIES },
+    description: 'マクドナルド・ENEOS併設。',
+    imageUrls: [],
+  },
+  {
+    name: '福山SA(下り)',
+    type: 'sa',
+    region: '広島',
+    address: '広島県福山市津之郷町津之郷',
+    location: { lat: 34.469, lng: 133.364 },
+    routeInfo: { highwayName: '山陽自動車道', direction: '下り', nearestIC: '福山東IC' },
+    capacityTotal: 180,
+    capacityLargeTruck: 55,
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...SA_FACILITIES },
+    description: 'ENEOS併設。',
+    imageUrls: [],
+  },
+  {
+    name: '吉備SA(上り)',
+    type: 'sa',
+    region: '岡山',
+    address: '岡山県総社市溝口',
+    location: { lat: 34.666, lng: 133.721 },
+    routeInfo: { highwayName: '山陽自動車道', direction: '上り', nearestIC: '岡山総社IC' },
+    capacityTotal: 160,
+    capacityLargeTruck: 50,
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...SA_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '吉備SA(下り)',
+    type: 'sa',
+    region: '岡山',
+    address: '岡山県総社市溝口',
+    location: { lat: 34.663, lng: 133.718 },
+    routeInfo: { highwayName: '山陽自動車道', direction: '下り', nearestIC: '岡山総社IC' },
+    capacityTotal: 155,
+    capacityLargeTruck: 48,
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...SA_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '龍野西SA(上り)',
+    type: 'sa',
+    region: '兵庫',
+    address: '兵庫県たつの市新宮町',
+    location: { lat: 34.848, lng: 134.559 },
+    routeInfo: { highwayName: '山陽自動車道', direction: '上り', nearestIC: '龍野西IC' },
+    capacityTotal: 170,
+    capacityLargeTruck: 55,
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...SA_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '龍野西SA(下り)',
+    type: 'sa',
+    region: '兵庫',
+    address: '兵庫県たつの市新宮町',
+    location: { lat: 34.845, lng: 134.556 },
+    routeInfo: { highwayName: '山陽自動車道', direction: '下り', nearestIC: '龍野西IC' },
+    capacityTotal: 165,
+    capacityLargeTruck: 52,
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...SA_FACILITIES },
+    imageUrls: [],
+  },
+
+  // ── 山陽自動車道 PA（5件）────────────────────────────────────────
+  {
+    name: '高坂PA(上り)',
+    type: 'pa',
+    region: '広島',
+    address: '広島県三原市久井町山中野',
+    location: { lat: 34.439, lng: 133.072 },
+    routeInfo: { highwayName: '山陽自動車道', direction: '上り', nearestIC: '三原久井IC' },
+    capacityTotal: 60,
+    capacityLargeTruck: 20,
+    isFree: false,
+    pricePerNight: 1500,
+    isOpen24Hours: true,
+    facilities: { ...PA_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '高坂PA(下り)',
+    type: 'pa',
+    region: '広島',
+    address: '広島県三原市久井町山中野',
+    location: { lat: 34.437, lng: 133.070 },
+    routeInfo: { highwayName: '山陽自動車道', direction: '下り', nearestIC: '三原久井IC' },
+    capacityTotal: 55,
+    capacityLargeTruck: 18,
+    isFree: false,
+    pricePerNight: 1500,
+    isOpen24Hours: true,
+    facilities: { ...PA_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '八幡PA(上り)',
+    type: 'pa',
+    region: '広島',
+    address: '広島県三原市八幡町美生',
+    location: { lat: 34.431, lng: 133.095 },
+    routeInfo: { highwayName: '山陽自動車道', direction: '上り', nearestIC: '三原久井IC' },
+    capacityTotal: 45,
+    capacityLargeTruck: 15,
+    isFree: false,
+    pricePerNight: 1500,
+    isOpen24Hours: true,
+    facilities: { ...PA_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '道口PA(上り)',
+    type: 'pa',
+    region: '岡山',
+    address: '岡山県都窪郡早島町',
+    location: { lat: 34.626, lng: 133.648 },
+    routeInfo: { highwayName: '山陽自動車道', direction: '上り', nearestIC: '早島IC' },
+    capacityTotal: 50,
+    capacityLargeTruck: 16,
+    isFree: false,
+    pricePerNight: 1500,
+    isOpen24Hours: true,
+    facilities: { ...PA_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '瀬戸PA(上り)',
+    type: 'pa',
+    region: '岡山',
+    address: '岡山県赤磐市沼田',
+    location: { lat: 34.762, lng: 134.001 },
+    routeInfo: { highwayName: '山陽自動車道', direction: '上り', nearestIC: '赤磐IC' },
+    capacityTotal: 40,
+    capacityLargeTruck: 12,
+    isFree: false,
+    pricePerNight: 1500,
+    isOpen24Hours: true,
+    facilities: { ...PA_FACILITIES },
+    imageUrls: [],
+  },
+
+  // ── 中国自動車道 SA（4件）────────────────────────────────────────
+  {
+    name: '吉和SA(上り)',
+    type: 'sa',
+    region: '広島',
+    address: '広島県廿日市市吉和',
+    location: { lat: 34.559, lng: 132.226 },
+    routeInfo: { highwayName: '中国自動車道', direction: '上り', nearestIC: '加計IC' },
+    capacityTotal: 110,
+    capacityLargeTruck: 32,
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...SA_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '吉和SA(下り)',
+    type: 'sa',
+    region: '広島',
+    address: '広島県廿日市市吉和',
+    location: { lat: 34.556, lng: 132.223 },
+    routeInfo: { highwayName: '中国自動車道', direction: '下り', nearestIC: '加計IC' },
+    capacityTotal: 105,
+    capacityLargeTruck: 30,
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...SA_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '鹿野SA(上り)',
+    type: 'sa',
+    region: '山口',
+    address: '山口県周南市鹿野上',
+    location: { lat: 34.153, lng: 131.853 },
+    routeInfo: { highwayName: '中国自動車道', direction: '上り', nearestIC: '鹿野IC' },
+    capacityTotal: 130,
+    capacityLargeTruck: 40,
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...SA_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '鹿野SA(下り)',
+    type: 'sa',
+    region: '山口',
+    address: '山口県周南市鹿野上',
+    location: { lat: 34.150, lng: 131.850 },
+    routeInfo: { highwayName: '中国自動車道', direction: '下り', nearestIC: '鹿野IC' },
+    capacityTotal: 125,
+    capacityLargeTruck: 38,
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...SA_FACILITIES },
+    imageUrls: [],
+  },
+
+  // ── 道の駅（12件）──────────────────────────────────────────────
+  {
+    name: '湖畔の里福富',
+    type: 'michi-no-eki',
+    region: '広島',
+    address: '広島県東広島市福富町久芳1506',
+    location: { lat: 34.485, lng: 132.785 },
+    isFree: true,
+    isOpen24Hours: false,
+    operatingHours: '9:00〜18:00',
+    facilities: { ...MICHI_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: 'たけはら',
+    type: 'michi-no-eki',
+    region: '広島',
+    address: '広島県竹原市田万里町1-1',
+    location: { lat: 34.337, lng: 132.887 },
+    isFree: true,
+    isOpen24Hours: false,
+    operatingHours: '9:00〜18:00',
+    facilities: { ...MICHI_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: 'よがんす白竜',
+    type: 'michi-no-eki',
+    region: '広島',
+    address: '広島県三原市大和町大草',
+    location: { lat: 34.442, lng: 133.008 },
+    isFree: true,
+    isOpen24Hours: false,
+    operatingHours: '9:00〜18:00',
+    facilities: { ...MICHI_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: 'せら',
+    type: 'michi-no-eki',
+    region: '広島',
+    address: '広島県世羅郡世羅町川尻2402-1',
+    location: { lat: 34.599, lng: 133.116 },
+    isFree: true,
+    isOpen24Hours: false,
+    operatingHours: '9:00〜18:00',
+    facilities: { ...MICHI_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '来夢とごうち',
+    type: 'michi-no-eki',
+    region: '広島',
+    address: '広島県山県郡安芸太田町上殿2001',
+    location: { lat: 34.619, lng: 132.282 },
+    isFree: true,
+    isOpen24Hours: false,
+    operatingHours: '9:00〜18:00',
+    facilities: { ...MICHI_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: 'スパ羅漢',
+    type: 'michi-no-eki',
+    region: '広島',
+    address: '広島県廿日市市吉和21-5',
+    location: { lat: 34.562, lng: 132.208 },
+    isFree: true,
+    isOpen24Hours: false,
+    operatingHours: '9:00〜18:00',
+    facilities: {
+      ...MICHI_FACILITIES,
+      shower: true,
+      gasStation: true,
+    },
+    description: '温泉・シャワー・ガソリンスタンドあり。',
+    imageUrls: [],
+  },
+  {
+    name: 'かもがわ円城',
+    type: 'michi-no-eki',
+    region: '岡山',
+    address: '岡山県加賀郡吉備中央町上田西2325-1',
+    location: { lat: 34.829, lng: 133.584 },
+    isFree: true,
+    isOpen24Hours: false,
+    operatingHours: '9:00〜18:00',
+    facilities: { ...MICHI_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '醍醐の里',
+    type: 'michi-no-eki',
+    region: '岡山',
+    address: '岡山県真庭市粟谷',
+    location: { lat: 35.069, lng: 133.547 },
+    isFree: true,
+    isOpen24Hours: false,
+    operatingHours: '9:00〜18:00',
+    facilities: { ...MICHI_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: 'みつ',
+    type: 'michi-no-eki',
+    region: '兵庫',
+    address: '兵庫県たつの市御津町黒崎44-1',
+    location: { lat: 34.712, lng: 134.465 },
+    isFree: true,
+    isOpen24Hours: false,
+    operatingHours: '9:00〜18:00',
+    facilities: { ...MICHI_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: 'しそう',
+    type: 'michi-no-eki',
+    region: '兵庫',
+    address: '兵庫県宍粟市山崎町字上比地147-1',
+    location: { lat: 34.999, lng: 134.591 },
+    isFree: true,
+    isOpen24Hours: false,
+    operatingHours: '9:00〜18:00',
+    facilities: { ...MICHI_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '長門峡',
+    type: 'michi-no-eki',
+    region: '山口',
+    address: '山口県山口市阿東町中郷',
+    location: { lat: 34.292, lng: 131.472 },
+    isFree: true,
+    isOpen24Hours: false,
+    operatingHours: '9:00〜18:00',
+    facilities: { ...MICHI_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: 'きらら あじす',
+    type: 'michi-no-eki',
+    region: '山口',
+    address: '山口県山口市阿知須3250-1',
+    location: { lat: 34.085, lng: 131.529 },
+    isFree: true,
+    isOpen24Hours: false,
+    operatingHours: '9:00〜18:00',
+    facilities: { ...MICHI_FACILITIES },
+    imageUrls: [],
+  },
+
+  // ── トラックステーション（5件）──────────────────────────────────
+  {
+    name: '尾道トラックステーション',
+    type: 'truck-station',
+    region: '広島',
+    address: '広島県尾道市高須町1193-3',
+    location: { lat: 34.418, lng: 133.178 },
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...TRUCK_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '三次トラックステーション',
+    type: 'truck-station',
+    region: '広島',
+    address: '広島県三次市西酒屋町船所1468',
+    location: { lat: 34.789, lng: 132.844 },
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...TRUCK_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '岡山トラックステーション',
+    type: 'truck-station',
+    region: '岡山',
+    address: '岡山県岡山市中区倉富285-19',
+    location: { lat: 34.673, lng: 133.956 },
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...TRUCK_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '神戸トラックステーション',
+    type: 'truck-station',
+    region: '兵庫',
+    address: '兵庫県神戸市灘区灘浜町1-2',
+    location: { lat: 34.698, lng: 135.214 },
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...TRUCK_FACILITIES },
+    imageUrls: [],
+  },
+  {
+    name: '山口トラックステーション',
+    type: 'truck-station',
+    region: '山口',
+    address: '山口県山口市小郡上郷',
+    location: { lat: 34.167, lng: 131.491 },
+    isFree: false,
+    pricePerNight: 2000,
+    isOpen24Hours: true,
+    facilities: { ...TRUCK_FACILITIES },
+    imageUrls: [],
+  },
+];
+
+export default function SeedPage() {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSeed = async () => {
+    if (!confirm('シードデータを投入します。既存のデータはすべて削除されます。')) return;
+
+    setIsLoading(true);
+    try {
+      const deletedCount = await deleteAllParkingLots();
+      console.log(`Deleted ${deletedCount} parking lots`);
+
+      for (const data of SEED_DATA) {
+        await createParkingLot(data);
+      }
+
+      toast.success(`${SEED_DATA.length}件のシードデータを投入しました`);
+      navigate('/');
+    } catch (err) {
+      console.error(err);
+      toast.error('エラーが発生しました');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-900">
+      <PageHeader title="シードデータ投入" onBack={() => navigate('/')} />
+      <main className="mx-auto max-w-2xl px-4 py-6">
+        <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 space-y-4">
+          <p className="text-slate-300">
+            このページは開発用です。シードデータを投入するとすべての既存データが削除されます。
+          </p>
+          <div className="bg-yellow-900/30 border border-yellow-700 rounded p-4 text-yellow-200 text-sm">
+            警告: この操作は取り消せません。本番環境では実行しないでください。
+          </div>
+          <div className="text-slate-400 text-sm space-y-1">
+            <p>投入されるデータ（{SEED_DATA.length}件）:</p>
+            <ul className="list-disc list-inside">
+              {SEED_DATA.map((item) => (
+                <li key={item.name}>{item.name}</li>
+              ))}
+            </ul>
+          </div>
+          <button
+            onClick={handleSeed}
+            disabled={isLoading}
+            className="w-full rounded-lg bg-red-600 px-4 py-3 text-base font-medium text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            {isLoading ? '投入中...' : 'シードデータを投入'}
+          </button>
+        </div>
+      </main>
+    </div>
+  );
+}

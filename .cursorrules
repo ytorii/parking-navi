@@ -1,0 +1,167 @@
+# Campus Project - Cursor Rules
+
+> 詳細: docs/coding-guideline.md 参照
+
+## プロジェクト概要
+
+- **Framework**: React 19 + TypeScript（strict mode）
+- **Build**: Vite
+- **Styling**: Tailwind CSS v4
+- **State**: React Context（Auth）/ useState（ローカル）/ Firestore onSnapshot（サーバー）
+- **Routing**: React Router v7
+- **Auth**: Firebase Authentication（Google ログイン）
+- **Animation**: motion（import from `motion/react`）
+- **Icons**: lucide-react
+- **Toast**: sonner
+- **Testing**: Vitest + React Testing Library
+- **Linting**: ESLint + Prettier
+
+## ディレクトリ構成
+
+```
+src/
+├── components/     # 再利用可能なUIコンポーネント
+├── contexts/       # React Context（AuthContext 等）
+├── hooks/          # カスタムフック（useAuth, useCamp, useCamps）
+├── pages/          # ルートに対応するページコンポーネント
+├── lib/            # 外部ライブラリの設定・ラッパー
+│   └── firebase/   # Firebase 初期化（app, firestore, auth）
+└── types/          # グローバル型定義（camp.ts）
+```
+
+## 必須ルール
+
+### TypeScript
+
+- `any` 禁止 → `unknown` + type guard を使用
+- `@ts-ignore` / `@ts-expect-error` 禁止 → 型を正しく修正
+- Props は `interface ComponentNameProps` で型定義
+- `as` による型アサーション禁止 → type guard か `satisfies` を使用
+
+### コンポーネント
+
+- 関数コンポーネント + Hooks のみ（クラスコンポーネント禁止）
+- 1ファイル1コンポーネント
+- デフォルトエクスポート（hooks/utils は named export）
+- ESModules のみ（`require` 禁止）
+- 150行超えたら分割を検討
+
+### ファイル命名
+
+- コンポーネント: `PascalCase.tsx`（CampCard.tsx, HeroSection.tsx）
+- フック: `use*.ts`（useAuth.ts, useCamps.ts）
+- ユーティリティ: `camelCase.ts`（time.ts, camps.ts）
+- テスト: `*.test.tsx` or `__tests__/`
+- 型定義: `*.ts`（camp.ts）
+
+## コンポーネントテンプレート
+
+```tsx
+import { useState } from 'react';
+import { MapPin } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import type { Camp } from '@/types/camp';
+
+interface CampCardProps {
+  camp: Camp;
+  onSelect: (campId: string) => void;
+  isHighlighted?: boolean;
+}
+
+export default function CampCard({ camp, onSelect, isHighlighted = false }: CampCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const handleClick = () => {
+    onSelect(camp.id);
+  };
+
+  return (
+    <article aria-label={`${camp.name}のカード`}>
+      <h3>{camp.name}</h3>
+      {isExpanded && <p>{camp.description}</p>}
+      <button onClick={handleClick} type="button">選択</button>
+    </article>
+  );
+}
+```
+
+## Import 順序
+
+1. React / React DOM
+2. サードパーティライブラリ（react-router, motion/react, lucide-react, sonner）
+3. 内部モジュール（`@/`）
+4. 相対パス
+5. スタイル
+6. 型（`import type {}`）
+
+各グループ間に空行を入れる。グループ内はアルファベット順。
+
+## Hooks ルール
+
+- カスタムフックにビジネスロジックを切り出す
+- `useEffect` は外部同期のみ（Firestore onSnapshot, DOM API）
+- 派生状態は `useMemo` で計算（useEffect + setState 禁止）
+- イベントハンドラ内で副作用を直接実行
+- `useEffect` には必ずクリーンアップ関数（unsubscribe, AbortController, removeEventListener）
+- 依存配列を省略しない
+
+## エラーハンドリング
+
+- 遅延ロードコンポーネントは `<Suspense fallback={...}>` でラップ
+- 非同期: `try/catch` + 適切なエラー状態管理
+- ローディング / エラー / 空状態の3状態を必ず実装
+
+## テスト
+
+- `getByRole` > `getByLabelText` > `getByText` > `getByTestId`（最終手段）
+- `userEvent` を使う（`fireEvent` ではなく）
+- 振る舞いをテスト、実装詳細はテストしない
+- Arrange / Act / Assert パターン
+
+## アクセシビリティ
+
+- セマンティックHTML優先（`<button>`, `<nav>`, `<main>`, `<section>`）
+- `<div onClick>` 禁止 → `<button>` / `<a>` を使う
+- アイコンボタンに `aria-label` 必須
+- `<img>` に `alt` 必須
+- 見出し階層を飛ばさない（h1 → h2 → h3）
+- フォーム要素に `<label>` を紐付け
+- キーボード操作可能
+
+## スタイリング（Tailwind CSS v4）
+
+- クラス順序: レイアウト → スペーシング → サイズ → タイポ → ビジュアル → インタラクティブ → レスポンシブ
+- 条件付きクラス: `clsx` を使用
+- arbitrary values は最終手段
+
+## パフォーマンス
+
+- `React.memo` / `useMemo` / `useCallback` は計測してから使う
+- ルート単位で `React.lazy` + `Suspense` でコード分割
+- リストの `key` に一意なIDを使用（index 禁止）
+
+## 状態管理
+
+- ローカルUI: `useState`
+- 認証状態: React Context（`AuthContext` + `useAuth`）
+- サーバー状態: Firestore `onSnapshot` リアルタイム購読（`useCamps`, `useCamp`）
+
+## 禁止事項
+
+- `any` 型
+- `@ts-ignore` / `@ts-expect-error`
+- `as` 型アサーション（type guard を使う）
+- クラスコンポーネント
+- `<div onClick>` / `<span onClick>`
+- `console.log` のコミット
+- `index` を `key` に使用
+- `require()`（ESModules を使う）
+- `fireEvent`（`userEvent` を使う）
+- `container.querySelector`（RTL クエリを使う）
+
+## Git ルール
+
+- `main` / `master` に直接コミットしない
+- ブランチ命名: `feature/xxx`, `fix/xxx`, `refactor/xxx`
+- コミット前: `npm run typecheck && npm run lint`
+- Conventional Commits: `feat(scope): 説明`, `fix(scope): 説明`
