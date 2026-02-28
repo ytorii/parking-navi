@@ -11,7 +11,7 @@ import ParkingLotCard from '@/components/ParkingLotCard';
 import RouteMap from '@/components/RouteMap';
 import type { Facilities } from '@/types/parkingLot';
 
-const RADIUS_OPTIONS = [2, 5, 10, 20] as const;
+const INTERVAL_OPTIONS = [50, 100, 150, 200] as const;
 
 const FACILITY_OPTIONS: { key: keyof Facilities; label: string }[] = [
   { key: 'shower', label: 'シャワー' },
@@ -30,7 +30,8 @@ export default function Home() {
 
   const [fromText, setFromText] = useState('');
   const [toText, setToText] = useState('');
-  const [maxDistanceKm, setMaxDistanceKm] = useState<(typeof RADIUS_OPTIONS)[number]>(10);
+  const maxDistanceKm = 10; // 固定値
+  const [intervalKm, setIntervalKm] = useState<(typeof INTERVAL_OPTIONS)[number]>(100);
   const [onlyLargeTruck, setOnlyLargeTruck] = useState(false);
   const [requiredFacilities, setRequiredFacilities] = useState<(keyof Facilities)[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
@@ -47,13 +48,13 @@ export default function Home() {
     e.preventDefault();
     if (!fromText.trim() || !toText.trim()) return;
     setHasSearched(true);
-    await search({ fromText, toText, maxDistanceKm, onlyLargeTruck, requiredFacilities });
+    await search({ fromText, toText, maxDistanceKm, intervalKm, onlyLargeTruck, requiredFacilities });
   }
 
   function handleReset() {
     setFromText('');
     setToText('');
-    setMaxDistanceKm(10);
+    setIntervalKm(100);
     setOnlyLargeTruck(false);
     setRequiredFacilities([]);
     setHasSearched(false);
@@ -132,24 +133,24 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 検索半径 */}
+          {/* 休憩間隔 */}
           <div>
-            <p className="text-xs font-medium text-slate-400 mb-1.5">ルートからの距離</p>
+            <p className="text-xs font-medium text-slate-400 mb-1.5">休憩間隔</p>
             <div className="flex gap-2">
-              {RADIUS_OPTIONS.map((r) => (
+              {INTERVAL_OPTIONS.map((i) => (
                 <button
-                  key={r}
+                  key={i}
                   type="button"
-                  onClick={() => setMaxDistanceKm(r)}
-                  aria-pressed={maxDistanceKm === r}
+                  onClick={() => setIntervalKm(i)}
+                  aria-pressed={intervalKm === i}
                   className={clsx(
                     'flex-1 rounded-lg py-1.5 text-sm font-medium transition',
-                    maxDistanceKm === r
+                    intervalKm === i
                       ? 'bg-blue-600 text-white'
                       : 'border border-slate-600 bg-slate-700 text-slate-300 hover:border-blue-500',
                   )}
                 >
-                  {r}km
+                  {i}km
                 </button>
               ))}
             </div>

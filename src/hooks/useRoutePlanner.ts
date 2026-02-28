@@ -9,6 +9,7 @@ export interface RouteSearchParams {
   fromText: string;
   toText: string;
   maxDistanceKm: number;
+  intervalKm: number;
   onlyLargeTruck: boolean;
   requiredFacilities: (keyof Facilities)[];
 }
@@ -107,7 +108,7 @@ export function useRoutePlanner(): RoutePlannerResult {
       setIsRoadRoute(roadRoute);
 
       // 3. 距離計算 & フィルタ（ポリラインを使用）
-      const filtered: RouteLot[] = allLots
+      const candidateLots: RouteLot[] = allLots
         .map((lot) => {
           const p = { lat: lot.location.lat, lng: lot.location.lng };
           const { distanceKm, position } = pointToPolylineResult(p, geometry);
@@ -120,8 +121,35 @@ export function useRoutePlanner(): RoutePlannerResult {
             if (!lot.facilities[fac]) return false;
           }
           return true;
-        })
-        .sort((a, b) => a.routePosition - b.routePosition);
+        });
+
+      // 4. 休憩ポイント間隔での絞り込み
+      const restPoints: number[] = [];
+      for (let d = params.intervalKm; d < distKm; d += params.intervalKm) {
+        restPoints.push(d / distKm); // 正規化位置
+      }
+
+      let filtered: RouteLot[];
+      if (restPoints.length === 0) {
+        // ポイントがない場合は空結果
+        filtered = [];
+      } else {
+        // 各ポイントで最寄り1件を選択
+        const selected = new Map<string, RouteLot>();
+        for (const rp of restPoints) {
+          let best: RouteLot | null = null;
+          let bestDiff = Infinity;
+          for (const lot of candidateLots) {
+            const diff = Math.abs(lot.routePosition - rp);
+            if (diff < bestDiff) {
+              bestDiff = diff;
+              best = lot;
+            }
+          }
+          if (best) selected.set(best.id, best);
+        }
+        filtered = [...selected.values()].sort((a, b) => a.routePosition - b.routePosition);
+      }
 
       setResultLots(filtered);
       setIsSearching(false);
