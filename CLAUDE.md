@@ -72,7 +72,7 @@ src/
 
 - 機能ごとに新しいブランチを切る（`feature/xxx`, `fix/xxx`）
 - コミット前に `typecheck` と `lint` を通す
-- Claudeは直接 `master` ブランチにコミットしない
+- Claudeは直接 `main` ブランチにコミットしない
 
 ## セキュリティ
 
