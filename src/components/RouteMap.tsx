@@ -33,7 +33,7 @@ function createDivIcon(IconComponent: typeof MapPin, color: string) {
         borderRadius: '50%',
         backgroundColor: color,
         border: '2px solid white',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
       }}
     >
       <IconComponent size={16} color="white" />
@@ -99,19 +99,19 @@ export default function RouteMap({ from, to, lots, routeGeometry }: RouteMapProp
         bounds={bounds}
         scrollWheelZoom={true}
         style={{ height: 300, width: '100%' }}
-        className="sm:[&]:h-[400px]"
+        className="sm:[&]:h-[400px] [&_.leaflet-tile-pane]:brightness-75"
       >
         <TileLayer
           attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
 
         <Polyline
           positions={routeLine}
           pathOptions={{
             color: '#3b82f6',
-            weight: 3,
-            opacity: 0.85,
+            weight: 4,
+            opacity: 0.8,
             ...(isRoadRoute ? {} : { dashArray: '8 6' }),
           }}
         />
